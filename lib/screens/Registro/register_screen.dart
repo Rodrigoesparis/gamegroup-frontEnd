@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -90,7 +90,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextField(
                   controller: _nameController,
                   style: const TextStyle(color: Colors.white),
-                  decoration: _inputDecoration('Nombre completo', 'Ej: Rodrigo Esparís Álvarez'),
+                  decoration: _inputDecoration(
+                    'Nombre completo',
+                    'Ej: Rodrigo Esparís Álvarez',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextField(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -13,12 +13,30 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final _nameController = TextEditingController();
   final _gameController = TextEditingController();
   final _maxPlayersController = TextEditingController(text: '5');
+  final _passwordController = TextEditingController(); // NUEVO
   String _mode = 'CASUAL';
   String _privacy = 'ABIERTO';
   bool _loading = false;
+  bool _obscurePassword = true; // NUEVO
   String? _error;
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _gameController.dispose();
+    _maxPlayersController.dispose();
+    _passwordController.dispose(); // NUEVO
+    super.dispose();
+  }
+
   void _createGroup() async {
+    // Validar que si es privado con contraseña, haya contraseña
+    if (_privacy == 'PRIVADO_PASSWORD' &&
+        _passwordController.text.trim().isEmpty) {
+      setState(() => _error = 'Debes introducir una contraseña para el grupo');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
@@ -31,6 +49,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       mode: _mode,
       privacy: _privacy,
       maxPlayers: int.tryParse(_maxPlayersController.text) ?? 5,
+      password: _privacy == 'PRIVADO_PASSWORD'
+          ? _passwordController.text.trim()
+          : null,
     );
 
     setState(() => _loading = false);
@@ -76,6 +97,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 decoration: _inputDecoration('Warriors Elite'),
               ),
               const SizedBox(height: 16),
+
               const Text('Juego', style: TextStyle(color: Colors.white)),
               const SizedBox(height: 8),
               TextField(
@@ -84,6 +106,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 decoration: _inputDecoration('Valorant, DBD...'),
               ),
               const SizedBox(height: 16),
+
               const Text(
                 'Modo de juego',
                 style: TextStyle(color: Colors.white),
@@ -100,6 +123,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 onChanged: (v) => setState(() => _mode = v!),
               ),
               const SizedBox(height: 16),
+
               const Text('Privacidad', style: TextStyle(color: Colors.white)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
@@ -125,8 +149,49 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     child: const Text('Solo por invitación'),
                   ),
                 ],
-                onChanged: (v) => setState(() => _privacy = v!),
+                onChanged: (v) => setState(() {
+                  _privacy = v!;
+                  // Limpiar contraseña si cambia a otro modo
+                  if (_privacy != 'PRIVADO_PASSWORD') {
+                    _passwordController.clear();
+                  }
+                }),
               ),
+
+              // NUEVO — campo de contraseña visible solo si es PRIVADO_PASSWORD
+              if (_privacy == 'PRIVADO_PASSWORD') ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Contraseña del grupo',
+                  style: TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _inputDecoration('Introduce una contraseña')
+                      .copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
+                        ),
+                      ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Los jugadores necesitarán esta contraseña para unirse',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+
               const SizedBox(height: 16),
               const Text(
                 'Número máximo de jugadores',
@@ -139,11 +204,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration('5'),
               ),
+
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: const TextStyle(color: Colors.red)),
               ],
               const SizedBox(height: 24),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

@@ -3,17 +3,20 @@ import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 import 'dart:convert';
+import 'Grupo/group_members_screen.dart'; // NUEVO
 
 class ChatOverlay extends StatefulWidget {
   final String groupName;
   final int groupId;
   final String username;
+  final int currentUserId; // NUEVO — necesario para GroupMembersScreen
 
   const ChatOverlay({
     super.key,
     required this.groupName,
     required this.groupId,
     required this.username,
+    required this.currentUserId, // NUEVO
   });
 
   @override
@@ -48,12 +51,10 @@ class _ChatOverlayState extends State<ChatOverlay> {
   }
 
   void _onConnect(StompFrame frame) {
-    print('Conectado al WebSocket');
     setState(() => _connected = true);
     _stompClient.subscribe(
       destination: '/topic/chat/${widget.groupId}',
       callback: (frame) {
-        print('Mensaje recibido: ${frame.body}');
         if (frame.body != null) {
           final msg = jsonDecode(frame.body!);
           setState(() {
@@ -67,17 +68,12 @@ class _ChatOverlayState extends State<ChatOverlay> {
         }
       },
     );
-    print('Suscrito a /topic/chat/${widget.groupId}');
   }
 
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty || !_connected) return;
-
     final now = DateTime.now();
     final time = '${now.hour}:${now.minute.toString().padLeft(2, '0')}';
-
-    print('Enviando mensaje a /app/chat/${widget.groupId}');
-
     _stompClient.send(
       destination: '/app/chat/${widget.groupId}',
       body: jsonEncode({
@@ -87,6 +83,24 @@ class _ChatOverlayState extends State<ChatOverlay> {
       }),
     );
     _messageController.clear();
+  }
+
+  // NUEVO — abre el bottom sheet de miembros
+  void _openMembers() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, controller) => GroupMembersScreen(
+          groupId: widget.groupId,
+          currentUserId: widget.currentUserId,
+        ),
+      ),
+    );
   }
 
   @override
@@ -114,52 +128,68 @@ class _ChatOverlayState extends State<ChatOverlay> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(color: Color(0xFF1A1A2E)),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED),
-                    borderRadius: BorderRadius.circular(8),
+          // Header con nombre tappable
+          GestureDetector(
+            onTap: _openMembers, // NUEVO
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(color: Color(0xFF1A1A2E)),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C3AED),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.people,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.people,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.groupName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              widget.groupName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            // NUEVO — indicador visual de que es tappable
+                            const Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.white54,
+                              size: 16,
+                            ),
+                          ],
                         ),
-                      ),
-                      Text(
-                        _connected ? 'Conectado' : 'Conectando...',
-                        style: TextStyle(
-                          color: _connected ? Colors.green : Colors.orange,
-                          fontSize: 12,
+                        Text(
+                          _connected ? 'Conectado' : 'Conectando...',
+                          style: TextStyle(
+                            color: _connected ? Colors.green : Colors.orange,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
             ),
           ),
+          // Mensajes
           Expanded(
             child: _messages.isEmpty
                 ? const Center(
@@ -226,6 +256,7 @@ class _ChatOverlayState extends State<ChatOverlay> {
                     },
                   ),
           ),
+          // Input
           Container(
             padding: const EdgeInsets.all(16),
             color: const Color(0xFF1A1A2E),

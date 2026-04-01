@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import 'groups_screen.dart';
+import '../../services/api_service.dart';
+import '../Iniciales/main_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (user != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => GroupsScreen(user: user)),
+        MaterialPageRoute(builder: (_) => MainScreen(user: user)), // CAMBIADO
       );
     } else {
       setState(() => _error = 'Usuario o contraseña incorrectos');

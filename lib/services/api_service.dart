@@ -63,18 +63,23 @@ class ApiService {
     required String mode,
     required String privacy,
     required int maxPlayers,
+    String? password, // NUEVO
   }) async {
+    final body = {
+      'creatorId': creatorId,
+      'name': name,
+      'game': game,
+      'mode': mode,
+      'privacy': privacy,
+      'maxPlayers': maxPlayers,
+      if (password != null && password.isNotEmpty)
+        'password': password, // NUEVO
+    };
+
     final response = await http.post(
       Uri.parse('$baseUrl/groups'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'creatorId': creatorId,
-        'name': name,
-        'game': game,
-        'mode': mode,
-        'privacy': privacy,
-        'maxPlayers': maxPlayers,
-      }),
+      body: jsonEncode(body),
     );
 
     print('STATUS: ${response.statusCode}');
@@ -111,6 +116,77 @@ class ApiService {
         '$baseUrl/participants/join?userId=$userId&groupId=$groupId${password != null ? '&password=$password' : ''}',
       ),
       headers: {'Content-Type': 'application/json'},
+    );
+    return response.statusCode == 200;
+  }
+
+  // Listar miembros de un grupo
+  static Future<List<dynamic>> getGroupMembers(int groupId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/participants/$groupId'),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Expulsar miembro
+  static Future<bool> kickMember({
+    required int requesterId,
+    required int targetId,
+    required int groupId,
+  }) async {
+    final response = await http.delete(
+      Uri.parse(
+        '$baseUrl/participants/kick?requesterId=$requesterId&targetId=$targetId&groupId=$groupId',
+      ),
+    );
+    return response.statusCode == 200;
+  }
+
+  // Ascender a admin
+  static Future<bool> promoteToAdmin({
+    required int leaderId,
+    required int targetId,
+    required int groupId,
+  }) async {
+    final response = await http.post(
+      Uri.parse(
+        '$baseUrl/groups/$groupId/promote?liderActualId=$leaderId&targetUserId=$targetId',
+      ),
+    );
+    return response.statusCode == 200;
+  }
+
+  // Transferir liderazgo (el actual líder pasa a ADMIN)
+  static Future<bool> transferLeader({
+    required int currentLeaderId,
+    required int newLeaderId,
+    required int groupId,
+  }) async {
+    final response = await http.post(
+      Uri.parse(
+        '$baseUrl/groups/$groupId/transfer-leader?liderActualId=$currentLeaderId&nuevoLiderId=$newLeaderId',
+      ),
+    );
+    return response.statusCode == 200;
+  }
+
+  // Degradar ADMIN → MIEMBRO
+  static Future<bool> demoteToMember({
+    required int leaderId,
+    required int targetId,
+    required int groupId,
+  }) async {
+    final response = await http.post(
+      Uri.parse(
+        '$baseUrl/groups/$groupId/demote?liderActualId=$leaderId&targetUserId=$targetId',
+      ),
     );
     return response.statusCode == 200;
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
+import 'group_members_screen.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -34,6 +35,83 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   }
 
   void _joinGroup() async {
+    if (widget.group['privacy'] == 'PRIVADO_PASSWORD') {
+      final passwordController = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          title: const Text(
+            'Grupo privado',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: TextField(
+            controller: passwordController,
+            obscureText: true,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Contraseña del grupo',
+              hintStyle: const TextStyle(color: Colors.grey),
+              filled: true,
+              fillColor: const Color(0xFF0F0F13),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Entrar',
+                style: TextStyle(color: Color(0xFF7C3AED)),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      setState(() => _loading = true);
+      final result = await ApiService.joinGroup(
+        userId: widget.user['idUser'],
+        groupId: widget.group['idGroup'],
+        password: passwordController.text,
+      );
+      setState(() => _loading = false);
+
+      if (result == true) {
+        setState(() {
+          _alreadyInGroup = true;
+          _isThisGroup = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Te has unido al grupo!'),
+            backgroundColor: Color(0xFF7C3AED),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contraseña incorrecta'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Grupo abierto o solicitud
     setState(() => _loading = true);
     final result = await ApiService.joinGroup(
       userId: widget.user['idUser'],
@@ -85,6 +163,23 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     }
   }
 
+  void _openMembers() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, controller) => GroupMembersScreen(
+          groupId: widget.group['idGroup'],
+          currentUserId: widget.user['idUser'],
+        ),
+      ),
+    );
+  }
+
   Color _privacyColor(String privacy) {
     switch (privacy) {
       case 'ABIERTO':
@@ -125,6 +220,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           'Detalle del Grupo',
           style: TextStyle(color: Colors.white),
         ),
+        // NUEVO — icono de miembros en el AppBar
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.people, color: Colors.white),
+            tooltip: 'Ver miembros',
+            onPressed: _openMembers,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -240,7 +343,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Botones
+                    // Botones unirse/salir
                     if (_isThisGroup) ...[
                       Row(
                         children: [
@@ -313,6 +416,30 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         ),
                       ),
                     ],
+
+                    // NUEVO — botón Ver miembros
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(
+                          Icons.people_outline,
+                          color: Colors.white70,
+                        ),
+                        label: const Text(
+                          'Ver miembros',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Colors.white24),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: _openMembers,
+                      ),
+                    ),
                   ],
                 ),
               ),
