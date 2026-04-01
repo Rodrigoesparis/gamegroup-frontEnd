@@ -77,9 +77,41 @@ class ApiService {
       }),
     );
 
+    print('STATUS: ${response.statusCode}');
+    print('BODY: ${response.body}');
+
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
     return null;
+  }
+
+  static Future<Map<String, dynamic>?> getUserGroup(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/participants/user/$userId'),
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body is Map) return body as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<bool> joinGroup({
+    required int userId,
+    required int groupId,
+    String? password,
+  }) async {
+    final response = await http.post(
+      Uri.parse(
+        '$baseUrl/participants/join?userId=$userId&groupId=$groupId${password != null ? '&password=$password' : ''}',
+      ),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return response.statusCode == 200;
   }
 }

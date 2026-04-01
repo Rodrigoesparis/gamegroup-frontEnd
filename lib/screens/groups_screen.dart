@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'group_detail_screen.dart';
 import 'create_group_screen.dart';
+import 'chat_overlay.dart';
+import 'profile_screen.dart';
 
 class GroupsScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -14,11 +16,18 @@ class GroupsScreen extends StatefulWidget {
 class _GroupsScreenState extends State<GroupsScreen> {
   List<dynamic> _groups = [];
   bool _loading = true;
+  Map<String, dynamic>? _userParticipant;
 
   @override
   void initState() {
     super.initState();
     _loadGroups();
+    _loadUserGroup();
+  }
+
+  void _loadUserGroup() async {
+    final result = await ApiService.getUserGroup(widget.user['idUser']);
+    setState(() => _userParticipant = result);
   }
 
   void _loadGroups() async {
@@ -55,6 +64,47 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 
+  void _openChat() {
+    if (_userParticipant != null && _userParticipant!['group'] != null) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          builder: (_, controller) => ChatOverlay(
+            groupName: _userParticipant!['group']['name'],
+            groupId: _userParticipant!['group']['idGroup'],
+            username: widget.user['username'],
+          ),
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          title: const Text('Sin grupo', style: TextStyle(color: Colors.white)),
+          content: const Text(
+            '¡Únete o crea un grupo para chatear con tu equipo! 🎮',
+            style: TextStyle(color: Colors.grey),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Entendido',
+                style: TextStyle(color: Color(0xFF7C3AED)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,23 +138,55 @@ class _GroupsScreenState extends State<GroupsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: () {},
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProfileScreen(
+                  user: widget.user,
+                  participant: _userParticipant,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CreateGroupScreen(user: widget.user),
+      bottomNavigationBar: BottomAppBar(
+        color: const Color(0xFF1A1A2E),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FloatingActionButton(
+              heroTag: 'chat',
+              mini: true,
+              backgroundColor: const Color(0xFF7C3AED),
+              onPressed: _openChat,
+              child: Icon(
+                _userParticipant != null && _userParticipant!['group'] != null
+                    ? Icons.chat
+                    : Icons.chat_bubble_outline,
+                color: Colors.white,
+              ),
             ),
-          );
-          if (result == true) _loadGroups();
-        },
-        backgroundColor: const Color(0xFF7C3AED),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Crear', style: TextStyle(color: Colors.white)),
+            FloatingActionButton.extended(
+              heroTag: 'crear',
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CreateGroupScreen(user: widget.user),
+                  ),
+                );
+                if (result == true) {
+                  _loadGroups();
+                  _loadUserGroup();
+                }
+              },
+              backgroundColor: const Color(0xFF7C3AED),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('Crear', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
       body: _loading
           ? const Center(
@@ -194,13 +276,20 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         ),
                       ],
                     ),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            GroupDetailScreen(group: group, user: widget.user),
-                      ),
-                    ),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => GroupDetailScreen(
+                            group: group,
+                            user: widget.user,
+                          ),
+                        ),
+                      );
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      _loadUserGroup();
+                      _loadGroups();
+                    },
                   ),
                 );
               },

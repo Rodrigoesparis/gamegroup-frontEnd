@@ -1,10 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../services/api_service.dart';
 
-class GroupDetailScreen extends StatelessWidget {
+class GroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;
   final Map<String, dynamic> user;
 
   const GroupDetailScreen({super.key, required this.group, required this.user});
+
+  @override
+  State<GroupDetailScreen> createState() => _GroupDetailScreenState();
+}
+
+class _GroupDetailScreenState extends State<GroupDetailScreen> {
+  bool _loading = false;
+  bool _alreadyInGroup = false;
+  bool _isThisGroup = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserGroup();
+  }
+
+  void _checkUserGroup() async {
+    final result = await ApiService.getUserGroup(widget.user['idUser']);
+    if (result != null && result['group'] != null) {
+      setState(() {
+        _alreadyInGroup = true;
+        _isThisGroup = result['group']['idGroup'] == widget.group['idGroup'];
+      });
+    }
+  }
+
+  void _joinGroup() async {
+    setState(() => _loading = true);
+    final result = await ApiService.joinGroup(
+      userId: widget.user['idUser'],
+      groupId: widget.group['idGroup'],
+    );
+    setState(() => _loading = false);
+
+    if (result == true) {
+      setState(() {
+        _alreadyInGroup = true;
+        _isThisGroup = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Te has unido al grupo!'),
+          backgroundColor: Color(0xFF7C3AED),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No puedes unirte a este grupo'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _leaveGroup() async {
+    setState(() => _loading = true);
+    final response = await http.delete(
+      Uri.parse(
+        '${ApiService.baseUrl}/participants/leave?userId=${widget.user['idUser']}&groupId=${widget.group['idGroup']}',
+      ),
+    );
+    setState(() => _loading = false);
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _alreadyInGroup = false;
+        _isThisGroup = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Has salido del grupo'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   Color _privacyColor(String privacy) {
     switch (privacy) {
@@ -72,7 +151,7 @@ class GroupDetailScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          group['name'] ?? '',
+                          widget.group['name'] ?? '',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
@@ -80,7 +159,7 @@ class GroupDetailScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          group['game'] ?? '',
+                          widget.group['game'] ?? '',
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -111,17 +190,21 @@ class GroupDetailScreen extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: _privacyColor(
-                              group['privacy'] ?? '',
+                              widget.group['privacy'] ?? '',
                             ).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: _privacyColor(group['privacy'] ?? ''),
+                              color: _privacyColor(
+                                widget.group['privacy'] ?? '',
+                              ),
                             ),
                           ),
                           child: Text(
-                            _privacyLabel(group['privacy'] ?? ''),
+                            _privacyLabel(widget.group['privacy'] ?? ''),
                             style: TextStyle(
-                              color: _privacyColor(group['privacy'] ?? ''),
+                              color: _privacyColor(
+                                widget.group['privacy'] ?? '',
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -136,7 +219,7 @@ class GroupDetailScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            group['mode'] ?? '',
+                            widget.group['mode'] ?? '',
                             style: const TextStyle(
                               color: Color(0xFF7C3AED),
                               fontSize: 12,
@@ -151,29 +234,85 @@ class GroupDetailScreen extends StatelessWidget {
                         const Icon(Icons.people, color: Colors.grey, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          '${group['currentPlayers']}/${group['maxPlayers']} jugadores',
+                          '${widget.group['currentPlayers']}/${widget.group['maxPlayers']} jugadores',
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7C3AED),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    // Botones
+                    if (_isThisGroup) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Ya eres miembro',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Unirse al grupo',
-                          style: TextStyle(color: Colors.white),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: _loading ? null : _leaveGroup,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                                horizontal: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: _loading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Icon(
+                                    Icons.exit_to_app,
+                                    color: Colors.white,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _alreadyInGroup ? null : _joinGroup,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _alreadyInGroup
+                                ? Colors.grey
+                                : const Color(0xFF7C3AED),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: _loading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : Text(
+                                  _alreadyInGroup
+                                      ? 'Ya estás en otro grupo'
+                                      : 'Unirse al grupo',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
