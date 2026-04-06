@@ -3,20 +3,21 @@ import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 import 'dart:convert';
-import 'Grupo/group_members_screen.dart'; // NUEVO
+import 'group_members_screen.dart';
+import 'package:GameReunion_app/services/api_service.dart';
 
 class ChatOverlay extends StatefulWidget {
   final String groupName;
   final int groupId;
   final String username;
-  final int currentUserId; // NUEVO — necesario para GroupMembersScreen
+  final int currentUserId;
 
   const ChatOverlay({
     super.key,
     required this.groupName,
     required this.groupId,
     required this.username,
-    required this.currentUserId, // NUEVO
+    required this.currentUserId,
   });
 
   @override
@@ -32,7 +33,22 @@ class _ChatOverlayState extends State<ChatOverlay> {
   @override
   void initState() {
     super.initState();
+    _loadHistory();
     _connectWebSocket();
+  }
+
+  Future<void> _loadHistory() async {
+    final history = await ApiService.getChatHistory(widget.groupId);
+    setState(() {
+      for (final msg in history) {
+        _messages.add({
+          'sender': msg['sender'],
+          'text': msg['text'],
+          'time': msg['time'],
+          'isMe': msg['sender'] == widget.username,
+        });
+      }
+    });
   }
 
   void _connectWebSocket() {

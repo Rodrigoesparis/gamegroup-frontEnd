@@ -190,4 +190,66 @@ class ApiService {
     );
     return response.statusCode == 200;
   }
+
+  static Future<List<dynamic>> getChatHistory(int groupId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/$groupId/history'),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Enviar solicitud para unirse
+  static Future<Map<String, dynamic>> sendJoinRequest({
+    required int userId,
+    required int groupId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/requests/send?userId=$userId&groupId=$groupId'),
+    );
+    return {'success': response.statusCode == 200, 'message': response.body};
+  }
+
+  // Obtener solicitudes pendientes del grupo
+  static Future<List<dynamic>> getGroupRequests(int groupId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/requests/group/$groupId'),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Aceptar solicitud
+  static Future<bool> acceptRequest({
+    required int requestId,
+    required int leaderId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/requests/$requestId/accept?leaderId=$leaderId'),
+    );
+    return response.statusCode == 200;
+  }
+
+  // Rechazar solicitud
+  static Future<bool> rejectRequest({
+    required int requestId,
+    required int leaderId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/requests/$requestId/reject?leaderId=$leaderId'),
+    );
+    return response.statusCode == 200;
+  }
 }

@@ -1,4 +1,4 @@
-# gamereunion_app
+# GameReunion_app
 
 A new Flutter project.
 

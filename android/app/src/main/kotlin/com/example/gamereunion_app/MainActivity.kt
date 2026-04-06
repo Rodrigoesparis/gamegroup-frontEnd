@@ -1,4 +1,4 @@
-package com.example.gamereunion_app
+package com.example.GameReunion_app
 
 import io.flutter.embedding.android.FlutterActivity
 

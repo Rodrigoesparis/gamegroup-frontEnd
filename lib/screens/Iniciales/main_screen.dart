@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'groups_screen.dart';
 import 'servers_screen.dart';
 import 'search_screen.dart';
-import '../chat_overlay.dart';
+import '../Grupo/chat_overlay.dart';
 import '../Grupo/create_group_screen.dart';
 import '../Registro/profile_screen.dart';
 import '../../services/api_service.dart';
@@ -18,6 +18,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _userParticipant;
+  final _groupsKey = GlobalKey<GroupsScreenState>();
 
   @override
   void initState() {
@@ -73,15 +74,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _openCreate() async {
-    if (_currentIndex == 0) {
-      // Crear grupo
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => CreateGroupScreen(user: widget.user)),
-      );
-      if (result == true) _loadUserGroup();
-    } else if (_currentIndex == 1) {
-      // Crear servidor — de momento placeholder
+    if (_currentIndex == 1) {
+      // Crear servidor — placeholder
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -105,17 +99,6 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
       );
-    }
-  }
-
-  String get _fabLabel {
-    switch (_currentIndex) {
-      case 0:
-        return 'Crear grupo';
-      case 1:
-        return 'Crear servidor';
-      default:
-        return '';
     }
   }
 
@@ -150,8 +133,8 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         actions: [
-          // Botón chat solo en grupos y servidores
-          if (_currentIndex != 2)
+          // Chat solo visible en Servidores (índice 1)
+          if (_currentIndex == 1)
             IconButton(
               icon: Icon(
                 _userParticipant != null && _userParticipant!['group'] != null
@@ -175,15 +158,15 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      // FAB solo en grupos y servidores, no en búsqueda
-      floatingActionButton: _currentIndex != 2
+      // FAB solo en Servidores
+      floatingActionButton: _currentIndex == 1
           ? FloatingActionButton.extended(
               onPressed: _openCreate,
               backgroundColor: const Color(0xFF7C3AED),
               icon: const Icon(Icons.add, color: Colors.white),
-              label: Text(
-                _fabLabel,
-                style: const TextStyle(color: Colors.white),
+              label: const Text(
+                'Crear servidor',
+                style: TextStyle(color: Colors.white),
               ),
             )
           : null,
@@ -197,7 +180,7 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(
             icon: Icon(Icons.groups_outlined, color: Colors.white54),
             selectedIcon: Icon(Icons.groups, color: Color(0xFF7C3AED)),
-            label: 'Grupos',
+            label: 'Mi grupo',
           ),
           NavigationDestination(
             icon: Icon(Icons.dns_outlined, color: Colors.white54),
@@ -214,9 +197,20 @@ class _MainScreenState extends State<MainScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          GroupsScreen(user: widget.user, onGroupChanged: _loadUserGroup),
+          GroupsScreen(
+            key: _groupsKey, // NUEVO
+            user: widget.user,
+            onGroupChanged: _loadUserGroup,
+          ),
           ServersScreen(user: widget.user),
-          SearchScreen(user: widget.user),
+          SearchScreen(
+            user: widget.user,
+            onJoinedGroup: () {
+              // NUEVO
+              _groupsKey.currentState?.reload();
+              _loadUserGroup();
+            },
+          ),
         ],
       ),
     );

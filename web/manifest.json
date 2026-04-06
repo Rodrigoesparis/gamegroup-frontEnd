@@ -1,6 +1,6 @@
 {
-    "name": "gamereunion_app",
-    "short_name": "gamereunion_app",
+    "name": "GameReunion_app",
+    "short_name": "GameReunion_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

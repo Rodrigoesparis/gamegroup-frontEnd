@@ -144,10 +144,6 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     value: 'PRIVADO_PASSWORD',
                     child: const Text('Privado con contraseña'),
                   ),
-                  DropdownMenuItem(
-                    value: 'INVITACION',
-                    child: const Text('Solo por invitación'),
-                  ),
                 ],
                 onChanged: (v) => setState(() {
                   _privacy = v!;

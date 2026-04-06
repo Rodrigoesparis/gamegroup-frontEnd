@@ -35,6 +35,57 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   }
 
   void _joinGroup() async {
+    if (widget.group['privacy'] == 'SOLICITUD') {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          title: const Text(
+            'Solicitar unirse',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'Se enviará una solicitud al líder del grupo. Tendrá que aceptarla para que puedas entrar.',
+            style: TextStyle(color: Colors.grey),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Enviar solicitud',
+                style: TextStyle(color: Color(0xFF7C3AED)),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      setState(() => _loading = true);
+      final result = await ApiService.sendJoinRequest(
+        userId: widget.user['idUser'],
+        groupId: widget.group['idGroup'],
+      );
+      setState(() => _loading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? ''),
+          backgroundColor: result['success'] == true
+              ? const Color(0xFF7C3AED)
+              : Colors.red,
+        ),
+      );
+      return;
+    }
     if (widget.group['privacy'] == 'PRIVADO_PASSWORD') {
       final passwordController = TextEditingController();
       final confirmed = await showDialog<bool>(

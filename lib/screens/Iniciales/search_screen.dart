@@ -4,7 +4,9 @@ import '../Grupo/group_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final Map<String, dynamic> user;
-  const SearchScreen({super.key, required this.user});
+  final VoidCallback? onJoinedGroup;
+
+  const SearchScreen({super.key, required this.user, this.onJoinedGroup});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -15,7 +17,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<dynamic> _allGroups = [];
   List<dynamic> _results = [];
   bool _loading = false;
-  String _filter = 'todos'; // todos, grupos, servidores
+  String _filter = 'todos';
 
   @override
   void initState() {
@@ -145,105 +147,115 @@ class _SearchScreenState extends State<SearchScreen> {
                       const SizedBox(height: 12),
                       Text(
                         _searchController.text.isEmpty
-                            ? 'Escribe para buscar'
+                            ? 'No hay grupos disponibles'
                             : 'Sin resultados para "${_searchController.text}"',
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-                  itemCount: _results.length,
-                  itemBuilder: (context, index) {
-                    final group = _results[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A2E),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        leading: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF7C3AED).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.groups,
-                            color: Color(0xFF7C3AED),
-                          ),
+              : RefreshIndicator(
+                  color: const Color(0xFF7C3AED),
+                  onRefresh: () async => _loadAll(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                    itemCount: _results.length,
+                    itemBuilder: (context, index) {
+                      final group = _results[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A2E),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        title: Text(
-                          group['name'] ?? '',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(
-                              group['game'] ?? '',
-                              style: const TextStyle(color: Colors.grey),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF7C3AED).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _privacyColor(
-                                      group['privacy'] ?? '',
-                                    ).withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
+                            child: const Icon(
+                              Icons.groups,
+                              color: Color(0xFF7C3AED),
+                            ),
+                          ),
+                          title: Text(
+                            group['name'] ?? '',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                group['game'] ?? '',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
                                       color: _privacyColor(
-                                        group['privacy'] ?? '',
+                                        group['privacy']?.toString() ?? '',
+                                      ).withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: _privacyColor(
+                                          group['privacy']?.toString() ?? '',
+                                        ),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _privacyLabel(
+                                        group['privacy']?.toString() ?? '',
+                                      ),
+                                      style: TextStyle(
+                                        color: _privacyColor(
+                                          group['privacy']?.toString() ?? '',
+                                        ),
+                                        fontSize: 11,
                                       ),
                                     ),
                                   ),
-                                  child: Text(
-                                    _privacyLabel(group['privacy'] ?? ''),
-                                    style: TextStyle(
-                                      color: _privacyColor(
-                                        group['privacy'] ?? '',
-                                      ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${group['currentPlayers']}/${group['maxPlayers']} jugadores',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
                                       fontSize: 11,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${group['currentPlayers']}/${group['maxPlayers']} jugadores',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 11,
+                                ],
+                              ),
+                            ],
+                          ),
+                          onTap: () =>
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => GroupDetailScreen(
+                                    group: group,
+                                    user: widget.user,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
+                              ).then((_) {
+                                _loadAll();
+                                widget.onJoinedGroup?.call();
+                              }),
                         ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => GroupDetailScreen(
-                              group: group,
-                              user: widget.user,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
         ),
       ],
