@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../Grupo/group_detail_screen.dart';
+import '../../services/websocket_service.dart';
+import 'dart:async';
 
 class SearchScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -18,6 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<dynamic> _results = [];
   bool _loading = false;
   String _filter = 'todos';
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -25,8 +28,23 @@ class _SearchScreenState extends State<SearchScreen> {
     _loadAll();
   }
 
-  void _loadAll() async {
-    setState(() => _loading = true);
+  void _onGroupEvent(Map<String, dynamic> event) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _loadAll(showLoading: false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _loadAll({bool showLoading = true}) async {
+    if (showLoading && _allGroups.isEmpty) {
+      setState(() => _loading = true);
+    }
     final groups = await ApiService.getGroups();
     setState(() {
       _allGroups = groups;
@@ -74,12 +92,6 @@ class _SearchScreenState extends State<SearchScreen> {
       default:
         return privacy;
     }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   @override

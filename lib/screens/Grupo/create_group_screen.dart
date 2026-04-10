@@ -13,11 +13,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final _nameController = TextEditingController();
   final _gameController = TextEditingController();
   final _maxPlayersController = TextEditingController(text: '5');
-  final _passwordController = TextEditingController(); // NUEVO
+  final _passwordController = TextEditingController();
   String _mode = 'CASUAL';
   String _privacy = 'ABIERTO';
   bool _loading = false;
-  bool _obscurePassword = true; // NUEVO
+  bool _obscurePassword = true;
   String? _error;
 
   @override
@@ -25,7 +25,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     _nameController.dispose();
     _gameController.dispose();
     _maxPlayersController.dispose();
-    _passwordController.dispose(); // NUEVO
+    _passwordController.dispose();
     super.dispose();
   }
 

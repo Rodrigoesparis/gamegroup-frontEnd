@@ -3,9 +3,10 @@ import 'groups_screen.dart';
 import 'servers_screen.dart';
 import 'search_screen.dart';
 import '../Grupo/chat_overlay.dart';
-import '../Grupo/create_group_screen.dart';
 import '../Registro/profile_screen.dart';
 import '../../services/api_service.dart';
+import '../../services/websocket_service.dart';
+import 'dart:async';
 
 class MainScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -19,11 +20,29 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _userParticipant;
   final _groupsKey = GlobalKey<GroupsScreenState>();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _loadUserGroup();
+    WebSocketService.instance.connect();
+    WebSocketService.instance.addGroupListener(_onGroupEvent);
+  }
+
+  void _onGroupEvent(Map<String, dynamic> event) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _loadUserGroup();
+      _groupsKey.currentState?.reload();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    WebSocketService.instance.removeGroupListener(_onGroupEvent);
+    super.dispose();
   }
 
   void _loadUserGroup() async {
@@ -198,9 +217,12 @@ class _MainScreenState extends State<MainScreen> {
         index: _currentIndex,
         children: [
           GroupsScreen(
-            key: _groupsKey, // NUEVO
+            key: _groupsKey,
             user: widget.user,
-            onGroupChanged: _loadUserGroup,
+            onGroupChanged: () {
+              _loadUserGroup();
+              setState(() => _currentIndex = 2);
+            },
           ),
           ServersScreen(user: widget.user),
           SearchScreen(
