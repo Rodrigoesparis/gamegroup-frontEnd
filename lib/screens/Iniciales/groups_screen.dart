@@ -5,6 +5,7 @@ import '../Grupo/create_group_screen.dart';
 import '../Grupo/chat_overlay.dart';
 import '../Grupo/group_members_screen.dart';
 import 'package:http/http.dart' as http;
+import '../Grupo/voice_channel_overlay.dart';
 
 class GroupsScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -405,13 +406,21 @@ class GroupsScreenState extends State<GroupsScreen> {
                     label: 'Llamada',
                     color: Colors.blueAccent,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            '🎮 Las llamadas estarán disponibles pronto',
+                      // obtener miembros ya cargados del FutureBuilder
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => DraggableScrollableSheet(
+                          initialChildSize: 0.6,
+                          minChildSize: 0.4,
+                          maxChildSize: 0.85,
+                          builder: (_, __) => VoiceChannelOverlay(
+                            groupId: _participant!['group']['idGroup'],
+                            groupName: _participant!['group']['name'],
+                            userId: widget.user['idUser'].toString(),
+                            members: [], // se carga dentro del overlay
                           ),
-                          backgroundColor: Color(0xFF1A1A2E),
-                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                     },

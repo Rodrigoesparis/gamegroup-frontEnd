@@ -12,7 +12,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   http: ^1.2.0
-  stomp_dart_client: ^0.4.4
+  flutter_webrtc: ^1.4.1
+  stomp_dart_client: ^1.0.0
+  permission_handler: ^11.0.0
   
   
 

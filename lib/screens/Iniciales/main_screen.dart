@@ -94,7 +94,6 @@ class _MainScreenState extends State<MainScreen> {
 
   void _openCreate() async {
     if (_currentIndex == 1) {
-      // Crear servidor — placeholder
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -152,8 +151,7 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         actions: [
-          // Chat solo visible en Servidores (índice 1)
-          if (_currentIndex == 1)
+          if (_currentIndex == 1 || _currentIndex == 2)
             IconButton(
               icon: Icon(
                 _userParticipant != null && _userParticipant!['group'] != null

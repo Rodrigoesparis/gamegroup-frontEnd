@@ -26,7 +26,9 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _loadAll();
+    WebSocketService.instance.addGroupListener(_onGroupEvent);
   }
+
 
   void _onGroupEvent(Map<String, dynamic> event) {
     _debounce?.cancel();
@@ -38,6 +40,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _debounce?.cancel();
+    WebSocketService.instance.removeGroupListener(_onGroupEvent);
     super.dispose();
   }
 
