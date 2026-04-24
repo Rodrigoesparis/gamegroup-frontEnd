@@ -389,16 +389,84 @@ class _GroupMembersScreenState extends State<GroupMembersScreen> {
                           ],
                         ),
                         // 3 puntos solo si soy líder y no es mi propio tile
-                        trailing: (_isLeader && !isMe)
-                            ? IconButton(
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Botones de karma (a todos menos a uno mismo)
+                            if (!isMe) ...[
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.thumb_up_outlined,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                                tooltip: '+2 karma',
+                                onPressed: () async {
+                                  final result = await ApiService.voteKarma(
+                                    voterId: widget.currentUserId,
+                                    targetId: memberId,
+                                    voteType: 'UP',
+                                  );
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        result['success']
+                                            ? '👍 +2 karma otorgado'
+                                            : result['message'] ??
+                                                  'Ya votaste a este usuario',
+                                      ),
+                                      backgroundColor: result['success']
+                                          ? const Color(0xFF1A1A2E)
+                                          : Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.thumb_down_outlined,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
+                                tooltip: '-1 karma',
+                                onPressed: () async {
+                                  final result = await ApiService.voteKarma(
+                                    voterId: widget.currentUserId,
+                                    targetId: memberId,
+                                    voteType: 'DOWN',
+                                  );
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        result['success']
+                                            ? '👎 -1 karma aplicado'
+                                            : result['message'] ??
+                                                  'Ya votaste a este usuario',
+                                      ),
+                                      backgroundColor: result['success']
+                                          ? const Color(0xFF1A1A2E)
+                                          : Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                            // 3 puntos solo si soy líder y no es mi propio tile
+                            if (_isLeader && !isMe)
+                              IconButton(
                                 icon: const Icon(
                                   Icons.more_vert,
                                   color: Colors.white54,
                                 ),
                                 onPressed: () =>
                                     _showActionMenu(context, memberId, role),
-                              )
-                            : null,
+                              ),
+                          ],
+                        ),
                       );
                     },
                   ),

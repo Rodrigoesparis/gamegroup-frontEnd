@@ -29,7 +29,6 @@ class _SearchScreenState extends State<SearchScreen> {
     WebSocketService.instance.addGroupListener(_onGroupEvent);
   }
 
-
   void _onGroupEvent(Map<String, dynamic> event) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -49,7 +48,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (showLoading && _allGroups.isEmpty) {
       setState(() => _loading = true);
     }
-    final groups = await ApiService.getGroups();
+    final groups = await ApiService.getGroups(widget.user['idUser']);
     setState(() {
       _allGroups = groups;
       _results = groups;

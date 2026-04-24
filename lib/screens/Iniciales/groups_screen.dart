@@ -588,6 +588,7 @@ class GroupsScreenState extends State<GroupsScreen> {
                                 ),
                               ),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   _roleIcon(r),
                                   const SizedBox(width: 4),
@@ -598,6 +599,74 @@ class GroupsScreenState extends State<GroupsScreen> {
                                       fontSize: 12,
                                     ),
                                   ),
+                                  if (!isMe) ...[
+                                    const SizedBox(width: 4),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final result =
+                                            await ApiService.voteKarma(
+                                              voterId: widget.user['idUser'],
+                                              targetId: u['idUser'],
+                                              voteType: 'UP',
+                                            );
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              result['success']
+                                                  ? '👍 +2 karma otorgado'
+                                                  : result['message'] ??
+                                                        'Ya votaste a este usuario',
+                                            ),
+                                            backgroundColor: result['success']
+                                                ? const Color(0xFF1A1A2E)
+                                                : Colors.red,
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                      },
+                                      child: const Icon(
+                                        Icons.thumb_up_outlined,
+                                        color: Colors.green,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final result =
+                                            await ApiService.voteKarma(
+                                              voterId: widget.user['idUser'],
+                                              targetId: u['idUser'],
+                                              voteType: 'DOWN',
+                                            );
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              result['success']
+                                                  ? '👎 -1 karma aplicado'
+                                                  : result['message'] ??
+                                                        'Ya votaste a este usuario',
+                                            ),
+                                            backgroundColor: result['success']
+                                                ? const Color(0xFF1A1A2E)
+                                                : Colors.red,
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                      },
+                                      child: const Icon(
+                                        Icons.thumb_down_outlined,
+                                        color: Colors.red,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],

@@ -7,6 +7,7 @@ import '../Registro/profile_screen.dart';
 import '../../services/api_service.dart';
 import '../../services/websocket_service.dart';
 import 'dart:async';
+import 'ranking_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -209,6 +210,11 @@ class _MainScreenState extends State<MainScreen> {
             selectedIcon: Icon(Icons.search, color: Color(0xFF7C3AED)),
             label: 'Buscar',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.leaderboard_outlined, color: Colors.white54),
+            selectedIcon: Icon(Icons.leaderboard, color: Color(0xFF7C3AED)),
+            label: 'Ranking',
+          ),
         ],
       ),
       body: IndexedStack(
@@ -231,6 +237,7 @@ class _MainScreenState extends State<MainScreen> {
               _loadUserGroup();
             },
           ),
+          RankingScreen(user: widget.user),
         ],
       ),
     );

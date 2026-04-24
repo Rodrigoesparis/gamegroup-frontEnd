@@ -48,8 +48,10 @@ class ApiService {
   }
 
   // Listar grupos
-  static Future<List<dynamic>> getGroups() async {
-    final response = await http.get(Uri.parse('$baseUrl/groups'));
+  static Future<List<dynamic>> getGroups(int userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/groups?userId=$userId'),
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
@@ -251,5 +253,30 @@ class ApiService {
       Uri.parse('$baseUrl/requests/$requestId/reject?leaderId=$leaderId'),
     );
     return response.statusCode == 200;
+  }
+
+  // Obtener ranking de karma
+  static Future<List<dynamic>> getKarmaRanking() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/karma/ranking'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Votar a un usuario
+  static Future<Map<String, dynamic>> voteKarma({
+    required int voterId,
+    required int targetId,
+    required String voteType, // 'UP' o 'DOWN'
+  }) async {
+    final response = await http.post(
+      Uri.parse(
+        '$baseUrl/karma/vote?voterId=$voterId&targetId=$targetId&voteType=$voteType',
+      ),
+    );
+    return {'success': response.statusCode == 200, 'message': response.body};
   }
 }
